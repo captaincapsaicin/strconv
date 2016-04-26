@@ -132,9 +132,21 @@ class Strconv(object):
         for s in iterable:
             yield self.convert(s, include_type=include_type)
 
-    def convert_matrix(self, matrix, include_type=False):
+    def convert_matrix(self, matrix, include_type=False, static_column_types=False):
+        first_row = True
+        converter_per_column = []
         for r in matrix:
-            yield tuple(self.convert(s, include_type=include_type) for s in r)
+            if first_row & static_column_types:
+                val_and_type = [self.convert(s, include_type=True) for s in r]
+                # find types per column when converting first line
+                converter_per_column = [pair[1] for pair in val_and_type]
+                first_row = False
+
+                yield tuple(pair[0] for pair in val_and_type)
+            if static_column_types:
+                yield(tuple(converter_per_column[i](r[i]) for i in enumerate(r)))
+            else:
+                yield tuple(self.convert(s, include_type=include_type) for s in r)
 
     def infer(self, s, converted=False):
         v, t = self.convert(s, include_type=True)
