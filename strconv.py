@@ -163,10 +163,14 @@ class Strconv(object):
                     # retrieve the type for each conversion
                     type_per_column = [self.infer(s) for s in r]
                     first_row = False
-                yield tuple(self._convert_series_by_index(r, type_per_column, include_type=include_type))
+                yield tuple(
+                    self._convert_series_by_index(r,
+                                                  type_per_column,
+                                                  include_type=include_type))
         else:
             for r in matrix:
-                yield tuple(self.convert(s, include_type=include_type) for s in r)
+                yield tuple(
+                    self.convert(s, include_type=include_type) for s in r)
 
     def _convert_series_by_index(self,
                                  iterable,
@@ -180,7 +184,8 @@ class Strconv(object):
         >>> tuple(_convert_series_by_index(series, converters))
         ('1', 2, 3.0)
         """
-        # TODO nthomas - this needs some way of dealing with ValueErrors. Or does it?
+        # TODO nthomas - this needs some way of dealing with ValueErrors.
+        # Or does it?
         # it should probably just error if the wrong types are used
         for i, s in enumerate(iterable):
             try:
