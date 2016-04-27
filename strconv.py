@@ -133,20 +133,47 @@ class Strconv(object):
             yield self.convert(s, include_type=include_type)
 
     def convert_matrix(self, matrix, include_type=False, static_column_types=False):
-        first_row = True
-        converter_per_column = []
-        for r in matrix:
-            if first_row & static_column_types:
-                val_and_type = [self.convert(s, include_type=True) for s in r]
-                # find types per column when converting first line
-                converter_per_column = [pair[1] for pair in val_and_type]
-                first_row = False
-
-                yield tuple(pair[0] for pair in val_and_type)
-            if static_column_types:
-                yield(tuple(converter_per_column[i](r[i]) for i in enumerate(r)))
-            else:
+        """
+        Convert a matrix of values, assuming types are consistent across a column,
+        given by the types of the first row.
+        """
+        if static_column_types:
+            first_row = True
+            # Note nthomas need to preserve ability to convert generators like csv reader
+            for r in matrix:
+                if first_row:
+                    # retrieve the type for each conversion
+                    type_per_column = [self.infer(s) for s in r]
+                    first_row = False
+                yield tuple(self._convert_series_by_index(r, type_per_column, include_type=include_type))
+        else:
+            for r in matrix:
                 yield tuple(self.convert(s, include_type=include_type) for s in r)
+
+    def _convert_series_by_index(self, iterable, converter_names, include_type=False):
+        """
+        Converts each element in a series according to its corresponding converter
+        in converter_names
+        >>> series = ['1', '2', '3']
+        >>> converters = [None, 'int', 'float']
+        >>> tuple(_convert_series_by_index(series, converters))
+        ('1', 2, 3.0)
+        """
+        # TODO nthomas - this needs some way of dealing with ValueErrors. Or does it?
+        # it should probably just error if the wrong types are used
+        for i, s in enumerate(iterable):
+            try:
+                func = self.converters[converter_names[i]]
+                # okay, so now we have a function assigned
+                if include_type:
+                    yield func(s), converter_names[i]
+                else:
+                    yield func(s)
+            except KeyError:
+                if include_type:
+                    yield s, None
+                else:
+                    yield s
 
     def infer(self, s, converted=False):
         v, t = self.convert(s, include_type=True)

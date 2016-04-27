@@ -58,6 +58,9 @@ class ConvertTestCase(unittest.TestCase):
     def test_convert_matrix(self):
         self.assertEqual(list(strconv.convert_matrix([['+0.4']])), [(0.4,)])
 
+    def test_convert_matrix_with_static_columns(self):
+        self.assertEqual(list(strconv.convert_matrix([['+0.4']], static_column_types=True)), [(0.4,)])
+
 
 class InferTestCase(unittest.TestCase):
     def test_infer(self):
