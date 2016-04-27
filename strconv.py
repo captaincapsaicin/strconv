@@ -1,10 +1,24 @@
 # strconv.py
 # Copyright (c) 2013 Byron Ruth
 # BSD License
+from collections import Counter
+
+import re
+from datetime import datetime
+
+# Use dateutil for more robust parsing
+try:
+    from dateutil.parser import parse as duparse
+except ImportError:
+    import warnings
+    warnings.warn('python-dateutil is not installed. As of version 0.5, '
+                  'this will be a hard dependency of strconv for'
+                  'datetime parsing. Without it, only a limited set of '
+                  'datetime formats are supported without timezones.')
+    duparse = None
+
 
 __version__ = '0.4.1'
-
-from collections import Counter
 
 
 class TypeInfo(object):
@@ -132,14 +146,18 @@ class Strconv(object):
         for s in iterable:
             yield self.convert(s, include_type=include_type)
 
-    def convert_matrix(self, matrix, include_type=False, static_column_types=False):
+    def convert_matrix(self,
+                       matrix,
+                       include_type=False,
+                       static_column_types=False):
         """
-        Convert a matrix of values, assuming types are consistent across a column,
-        given by the types of the first row.
+        Convert a matrix of values, assuming types are consistent across a
+        column, given by the types of the first row.
         """
         if static_column_types:
             first_row = True
-            # Note nthomas need to preserve ability to convert generators like csv reader
+            # Note nthomas need to preserve ability to convert generators
+            # like csv reader
             for r in matrix:
                 if first_row:
                     # retrieve the type for each conversion
@@ -150,10 +168,13 @@ class Strconv(object):
             for r in matrix:
                 yield tuple(self.convert(s, include_type=include_type) for s in r)
 
-    def _convert_series_by_index(self, iterable, converter_names, include_type=False):
+    def _convert_series_by_index(self,
+                                 iterable,
+                                 converter_names,
+                                 include_type=False):
         """
-        Converts each element in a series according to its corresponding converter
-        in converter_names
+        Converts each element in a series according to its corresponding
+        converter in converter_names
         >>> series = ['1', '2', '3']
         >>> converters = [None, 'int', 'float']
         >>> tuple(_convert_series_by_index(series, converters))
@@ -226,23 +247,7 @@ class Strconv(object):
 
         return infos
 
-
 # Built-in converters
-
-import re
-
-from datetime import datetime
-
-# Use dateutil for more robust parsing
-try:
-    from dateutil.parser import parse as duparse
-except ImportError:
-    import warnings
-    warnings.warn('python-dateutil is not installed. As of version 0.5, '
-                  'this will be a hard dependency of strconv for'
-                  'datetime parsing. Without it, only a limited set of '
-                  'datetime formats are supported without timezones.')
-    duparse = None
 
 DATE_FORMATS = (
     '%Y-%m-%d',
@@ -330,7 +335,6 @@ def convert_time(s, time_formats=TIME_FORMATS):
         except ValueError:
             pass
     raise ValueError
-
 
 # Initialize default instance and make accessible at the module level
 default_strconv = Strconv(converters=[
